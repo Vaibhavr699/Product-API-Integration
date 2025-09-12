@@ -1,42 +1,77 @@
 <script setup>
-import { ref } from 'vue'
+import { ref } from "vue";
+import { CubeIcon, UserIcon, Bars3Icon, XMarkIcon } from "@heroicons/vue/24/outline";
+import { useRouter } from 'vue-router'
 
-const isOpen = ref(false)
+const router = useRouter()
+const isOpen = ref(false);
+
 const toggle = () => {
-  isOpen.value = !isOpen.value
+  isOpen.value = !isOpen.value;
+};
+
+const navigateTo = (path) => {
+  router.push(path)
+  isOpen.value = false
 }
 </script>
 
 <template>
-  <nav class="border-b">
+  <nav class="border-b bg-white shadow-sm sticky top-0 z-50">
     <div class="px-4 sm:px-6 lg:px-8 py-4">
       <div class="flex items-center justify-between">
-        <div class="text-2xl font-bold">VueX</div>
+        <div class="text-2xl font-bold text-blue-700 cursor-pointer" @click="navigateTo('/')">
+          API Integration
+        </div>
 
         <button
           class="inline-flex items-center justify-center rounded-md p-2 md:hidden"
           aria-label="Toggle navigation"
           @click="toggle"
         >
-          <svg v-if="!isOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
+          <Bars3Icon v-if="!isOpen" class="h-6 w-6" />
+          <XMarkIcon v-else class="h-6 w-6" />
         </button>
 
         <div class="hidden md:flex gap-6 items-center">
-          <a href="#" class="hover:underline">Products</a>
-          <a href="#" class="hover:underline">Users</a>
+          <a
+            @click="navigateTo('/products')"
+            class="flex items-center cursor-pointer gap-2 hover:underline hover:scale-105 transition-transform"
+          >
+            <CubeIcon class="w-5 h-5" />
+            Products
+          </a>
+
+          <a
+            @click="navigateTo('/users')"
+            class="flex items-center gap-2 cursor-pointer hover:underline hover:scale-105 transition-transform"
+          >
+            <UserIcon class="w-5 h-5" />
+            Users
+          </a>
         </div>
       </div>
 
       <div v-show="isOpen" class="md:hidden mt-4 space-y-2">
-        <a href="#" class="block">Home</a>
-        <a href="#" class="block">About</a>
-        <a href="#" class="block">Contact</a>
+        <a @click="navigateTo('/products')" class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+          <CubeIcon class="w-5 h-5" />
+          Products
+        </a>
+        <a @click="navigateTo('/users')" class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+          <UserIcon class="w-5 h-5" />
+          Users
+        </a>
       </div>
     </div>
   </nav>
 </template>
+
+<script>
+export default {
+  name: 'Navbar'
+}
+</script>
+
+<style scoped>
+/* Add any component specific styles here */
+</style>
