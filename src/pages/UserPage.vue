@@ -1,19 +1,43 @@
 <template>
   <div class="user-page">
-    <div class="flex justify-between px-8">
-      <h1
-        class="text-4xl font-bold mb-4 text-center underline underline-offset-2"
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center px-4 sm:px-8 gap-4">
+  <h1
+    class="text-2xl sm:text-4xl font-bold text-center sm:text-left underline underline-offset-2"
+  >
+    Users
+  </h1>
+
+  <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 px-8">
+    <button
+      @click="openAddUserModal"
+      class="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg cursor-pointer flex items-center gap-2 hover:bg-green-700 transition w-full sm:w-auto justify-center"
+    >
+      <PlusIcon class="w-5 h-5 sm:w-6 sm:h-6" />
+      <span class="text-sm sm:text-base">Add New User</span>
+    </button>
+
+    <div class="relative group">
+      <div
+        @click="toggleView"
+        class="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition"
       >
-        Users
-      </h1>
-      <button
-        @click="openAddUserModal"
-        class="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg cursor-pointer"
+        <Squares2X2Icon v-if="isCardView" class="w-6 h-6" />
+        <ListBulletIcon v-else class="w-6 h-6" />
+      </div>
+      <div
+        class="absolute bottom-full mb-2 left-1/6 -translate-x-1/2 bg-gray-800 text-white text-xs sm:text-sm rounded px-3 sm:px-6 py-1 opacity-0 z-50 group-hover:opacity-100 transition whitespace-nowrap"
       >
-        Add New User
-      </button>
+        {{ isCardView ? "Switch to Table View" : "Switch to Card View" }}
+      </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  </div>
+</div>
+
+
+    <div
+      v-if="isCardView"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
       <div
         v-for="user in users"
         :key="user.id"
@@ -24,20 +48,33 @@
         </h2>
         <p class="text-gray-700">Email: {{ user.email }}</p>
         <p class="text-gray-600">Phone: {{ user.phone }}</p>
-        <div class="mt-4 flex justify-end">
-          <ActionButtons
-            :id="user.id"
-            @view="viewUserPage"
-            @edit="editUser"
-            @delete="confirmDeleteUser"
-          />
-        </div>
+
+        <ActionButtons
+          :id="user.id"
+          @view="viewUserPage"
+          @edit="editUser"
+          @delete="confirmDeleteUser"
+        />
       </div>
     </div>
 
-    <UserModal
+    <div v-else>
+      <TableView
+        :headers="tableHeaders"
+        :items="users"
+        :actions="tableActions"
+      >
+        <template #item-name="{ item }">
+          {{ item.name.firstname }} {{ item.name.lastname }}
+        </template>
+      </TableView>
+    </div>
+
+    <DynamicModal
       :show="showAddEditUserModal"
-      :user="isEditingUser ? selectedUser : null"
+      :title="isEditingUser ? 'Edit User' : 'Add New User'"
+      :fields="userFields"
+      :form-data="selectedUser"
       @close="showAddEditUserModal = false"
       @save="saveUser"
     />
@@ -53,16 +90,27 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
-import UserModal from "../components/UserModal.vue";
+import DynamicModal from "../components/DynamicModal.vue";
 import DeleteConfirmModal from "../components/DeleteConfirmModal.vue";
 import ActionButtons from "../components/ActionButtons.vue";
+import TableView from "../components/TableView.vue";
+
+import {
+  PlusIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+} from "@heroicons/vue/24/solid";
 
 export default {
   name: "UserPage",
   components: {
-    UserModal,
+    DynamicModal,
     DeleteConfirmModal,
     ActionButtons,
+    TableView,
+    PlusIcon,
+    Squares2X2Icon,
+    ListBulletIcon,
   },
   data() {
     return {
@@ -71,6 +119,26 @@ export default {
       isEditingUser: false,
       showDeleteConfirm: false,
       userIdToDelete: null,
+      isCardView: true,
+      userFields: [
+        { id: "firstname", label: "First Name", type: "text", model: "name.firstname" },
+        { id: "lastname", label: "Last Name", type: "text", model: "name.lastname" },
+        { id: "username", label: "Username", type: "text", model: "username" },
+        { id: "email", label: "Email", type: "email", model: "email" },
+        { id: "phone", label: "Phone", type: "text", model: "phone" },
+        { id: "website", label: "Website", type: "text", model: "website" },
+      ],
+      tableHeaders: [
+        { key: "id", label: "ID" },
+        { key: "name", label: "Name" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+      ],
+      tableActions: [
+        { name: "View", handler: (item) => this.viewUserPage(item.id) },
+        { name: "Edit", handler: (item) => this.editUser(item.id) },
+        { name: "Delete", handler: (item) => this.confirmDeleteUser(item.id) },
+      ],
     };
   },
   computed: {
@@ -92,7 +160,6 @@ export default {
     openAddUserModal() {
       this.isEditingUser = false;
       this.showAddEditUserModal = true;
-      console.log("user modal");
     },
     async editUser(id) {
       this.isEditingUser = true;
@@ -116,6 +183,10 @@ export default {
       await this.$store.dispatch("users/deleteUser", this.userIdToDelete);
       this.showDeleteConfirm = false;
       this.userIdToDelete = null;
+      this.fetchUsers();
+    },
+    toggleView() {
+      this.isCardView = !this.isCardView;
     },
   },
   created() {

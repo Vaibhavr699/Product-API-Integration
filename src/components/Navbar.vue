@@ -1,21 +1,3 @@
-<script setup>
-import { ref } from "vue";
-import { CubeIcon, UserIcon, Bars3Icon, XMarkIcon } from "@heroicons/vue/24/outline";
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-const isOpen = ref(false);
-
-const toggle = () => {
-  isOpen.value = !isOpen.value;
-};
-
-const navigateTo = (path) => {
-  router.push(path)
-  isOpen.value = false
-}
-</script>
-
 <template>
   <nav class="border-b bg-white shadow-sm sticky top-0 z-50">
     <div class="px-4 sm:px-6 lg:px-8 py-4">
@@ -72,6 +54,21 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Add any component specific styles here */
-</style>
+<script setup>
+import { ref } from "vue";
+import { CubeIcon, UserIcon, Bars3Icon, XMarkIcon } from "@heroicons/vue/24/outline";
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const isOpen = ref(false);
+
+const toggle = () => {
+  isOpen.value = !isOpen.value;
+};
+
+const navigateTo = (path) => {
+  router.push(path)
+  isOpen.value = false
+}
+</script>
+

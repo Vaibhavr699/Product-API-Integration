@@ -1,40 +1,51 @@
 <template>
   <div class="product-page">
-    <div class="flex justify-between px-8">
+    <div
+      class="flex flex-col sm:flex-row sm:justify-between sm:items-center px-4 sm:px-8 gap-4"
+    >
       <h1
-        class="text-4xl font-bold mb-4 text-center underline underline-offset-2"
+        class="text-2xl sm:text-4xl font-bold text-center sm:text-left underline underline-offset-2"
       >
         Products
       </h1>
-      <button
-        @click="openAddProductModal"
-        class="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg cursor-pointer"
-      >
-        Add New Product
-      </button>
-      <!-- <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth="{1.5}"
-        stroke="currentColor"
-        className="size-1"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M8.242 5.992h12m-12 6.003H20.24m-12 5.999h12M4.117 7.495v-3.75H2.99m1.125 3.75H2.99m1.125 0H5.24m-1.92 2.577a1.125 1.125 0 1 1 1.591 1.59l-1.83 1.83h2.16M2.99 15.745h1.125a1.125 1.125 0 0 1 0 2.25H3.74m0-.002h.375a1.125 1.125 0 0 1 0 2.25H2.99"
-        />
-      </svg> -->
+
+      <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 px-8">
+        <button
+          @click="openAddProductModal"
+          class="bg-green-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full shadow-lg cursor-pointer flex items-center gap-2 hover:bg-green-700 transition w-full sm:w-auto justify-center"
+        >
+          <PlusIcon class="w-5 h-5 sm:w-6 sm:h-6" />
+          <span class="text-sm sm:text-base">Add New Product</span>
+        </button>
+
+        <div class="relative group">
+          <div
+            @click="toggleView"
+            class="cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 text-white shadow-lg hover:bg-blue-600 transition"
+          >
+            <Squares2X2Icon v-if="isCardView" class="w-6 h-6" />
+            <ListBulletIcon v-else class="w-6 h-6" />
+          </div>
+
+          <div
+            class="absolute bottom-full mb-2 left-1/6 -translate-x-1/2 bg-gray-800 text-white text-xs sm:text-sm rounded px-3 sm:px-6 py-1 opacity-0 z-50 group-hover:opacity-100 transition whitespace-nowrap"
+          >
+            {{ isCardView ? "Switch to Table View" : "Switch to Card View"  }} 
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div
+      v-if="isCardView"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
       <div
         v-for="product in products"
         :key="product.id"
         class="bg-white p-4 rounded shadow"
       >
-        <h2 class="text-xl font-semibold">{{ product.title }}</h2>
+        <h2 class="text-xl font-semibold truncate">{{ product.title }}</h2>
         <p class="text-gray-700">Price: ${{ product.price }}</p>
         <p class="text-gray-600">Category: {{ product.category }}</p>
         <img
@@ -51,9 +62,27 @@
       </div>
     </div>
 
-    <ProductModal
+    <div v-else>
+      <TableView
+        :headers="tableHeaders"
+        :items="products"
+        :actions="tableActions"
+      >
+        <template #item-image="{ item }">
+          <img
+            :src="item.image"
+            alt="Product Image"
+            class="w-16 h-16 object-contain"
+          />
+        </template>
+      </TableView>
+    </div>
+
+    <DynamicModal
       :show="showAddEditProductModal"
-      :product="isEditingProduct ? selectedProduct : null"
+      :title="isEditingProduct ? 'Edit Product' : 'Add New Product'"
+      :fields="productFields"
+      :form-data="selectedProduct"
       @close="showAddEditProductModal = false"
       @save="saveProduct"
     />
@@ -69,16 +98,26 @@
 
 <script>
 import { mapState, mapActions } from "vuex";
-import ProductModal from "../components/ProductModal.vue";
+import DynamicModal from "../components/DynamicModal.vue";
 import DeleteConfirmModal from "../components/DeleteConfirmModal.vue";
 import ActionButtons from "../components/ActionButtons.vue";
+import TableView from "../components/TableView.vue";
+import {
+  PlusIcon,
+  Squares2X2Icon,
+  ListBulletIcon,
+} from "@heroicons/vue/24/solid";
 
 export default {
   name: "ProductPage",
   components: {
-    ProductModal,
+    DynamicModal,
     DeleteConfirmModal,
     ActionButtons,
+    TableView,
+    PlusIcon,
+    Squares2X2Icon,
+    ListBulletIcon,
   },
   data() {
     return {
@@ -87,6 +126,34 @@ export default {
       isEditingProduct: false,
       showDeleteConfirm: false,
       productIdToDelete: null,
+      isCardView: true,
+      productFields: [
+        { id: "title", label: "Title", type: "text", model: "title" },
+        { id: "price", label: "Price", type: "number", model: "price" },
+        {
+          id: "description",
+          label: "Description",
+          type: "textarea",
+          model: "description",
+        },
+        { id: "category", label: "Category", type: "text", model: "category" },
+        { id: "image", label: "Image Upload", type: "file", model: "image" },
+      ],
+      tableHeaders: [
+        { key: "id", label: "ID" },
+        { key: "title", label: "Title" },
+        { key: "price", label: "Price" },
+        { key: "category", label: "Category" },
+        { key: "image", label: "Image" },
+      ],
+      tableActions: [
+        { name: "View", handler: (item) => this.viewProductPage(item.id) },
+        { name: "Edit", handler: (item) => this.editProduct(item.id) },
+        {
+          name: "Delete",
+          handler: (item) => this.confirmDeleteProduct(item.id),
+        },
+      ],
     };
   },
   computed: {
@@ -111,7 +178,8 @@ export default {
     },
     async editProduct(id) {
       this.isEditingProduct = true;
-      this.selectedProduct = await this.fetchProduct(id);
+      const fetchedProduct = await this.fetchProduct(id);
+      this.selectedProduct = fetchedProduct || {};
       this.showAddEditProductModal = true;
     },
     async saveProduct(productData) {
@@ -134,6 +202,9 @@ export default {
       this.showDeleteConfirm = false;
       this.productIdToDelete = null;
       this.fetchProducts();
+    },
+    toggleView() {
+      this.isCardView = !this.isCardView;
     },
   },
   created() {
